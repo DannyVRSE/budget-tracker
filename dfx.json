@@ -1,0 +1,26 @@
+{
+  "canisters": {
+    "budget-tracker-backend": {
+      "main": "src/budget-tracker-backend/main.mo",
+      "type": "motoko"
+    },
+    "budget-tracker-frontend": {
+      "dependencies": [
+        "budget-tracker-backend"
+      ],
+      "source": [
+        "src/budget-tracker-frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "budget-tracker-frontend"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
