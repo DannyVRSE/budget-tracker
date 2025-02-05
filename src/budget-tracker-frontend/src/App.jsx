@@ -1,31 +1,14 @@
-import { useState } from 'react';
-import { budget_tracker_backend } from 'declarations/budget-tracker-backend';
+import React from 'react';
+import { AuthProvider } from './hooks/AuthContext';
+import Home from './pages/Home';
 
-function App() {
-  const [greeting, setGreeting] = useState('');
-
-  function handleSubmit(event) {
-    event.preventDefault();
-    const name = event.target.elements.name.value;
-    budget_tracker_backend.greet(name).then((greeting) => {
-      setGreeting(greeting);
-    });
-    return false;
-  }
+const App = () => {
 
   return (
-    <main>
-      <img src="/logo2.svg" alt="DFINITY logo" />
-      <br />
-      <br />
-      <form action="#" onSubmit={handleSubmit}>
-        <label htmlFor="name">Enter your name: &nbsp;</label>
-        <input id="name" alt="Name" type="text" />
-        <button type="submit">Click Me!</button>
-      </form>
-      <section id="greeting">{greeting}</section>
-    </main>
-  );
-}
+    <AuthProvider>
+      <Home />
+    </AuthProvider>
+  )
 
+}
 export default App;
