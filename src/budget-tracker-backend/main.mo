@@ -98,6 +98,17 @@ actor {
 
   //add period
   public func newPeriod(principal : Principal, start : Nat32, end : Nat32, budget : Nat32) : async Bool {
+    //basic validation
+    //check if start is before end
+    if (start >= end) {
+      return false;
+    };
+
+    //check if budget is positive
+    if (budget <= 0) {
+      return false;
+    };
+
     let periodId = nextPeriodId;
     nextPeriodId += 1;
 
@@ -161,6 +172,11 @@ actor {
             case (?period) {
               //add expense to period
               let expenses = period.expenses;
+
+              //check if expense is within period
+              if (date < period.start or date > period.end) {
+                return false;
+              };
 
               //create new expense list with the new expense
               let updatedExpenses = List.push(expense, expenses);
