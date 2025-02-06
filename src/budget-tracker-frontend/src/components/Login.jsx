@@ -49,8 +49,8 @@ const Login = () => {
         }
     }
     return (<>
-        <button className="btn btn-primary"onClick={login}>Login</button>
-        <button className="ms-3 btn btn-primary"onClick={logout}>Logout</button>
+        {!identity ? <button className="btn btn-primary" onClick={login}>Login</button> :
+            <button className="ms-3 btn btn-primary" onClick={logout}>Logout</button>}
     </>)
 }
 
