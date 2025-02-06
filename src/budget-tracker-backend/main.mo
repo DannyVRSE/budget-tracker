@@ -41,8 +41,8 @@ actor {
   };
 
   //id's
-  stable var nextPeriodId : PeriodId = 0;
-  stable var nextExpenseId : ExpenseId = 0;
+  stable var nextPeriodId : PeriodId = 1;
+  stable var nextExpenseId : ExpenseId = 1;
 
   //check if user exists
   public func exists(principal : Principal) : async Bool {
