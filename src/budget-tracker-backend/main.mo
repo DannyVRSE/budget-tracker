@@ -1,6 +1,5 @@
 import Principal "mo:base/Principal";
 import Trie "mo:base/Trie";
-import List "mo:base/List";
 import Nat32 "mo:base/Nat32";
 import Bool "mo:base/Bool";
 import Option "mo:base/Option";
@@ -8,30 +7,32 @@ import Text "mo:base/Text";
 
 actor {
 
+  //types
   type PeriodId = Nat32;
   type ExpenseId = Nat32;
 
   type Key<K> = Trie.Key<K>;
+
+  //period
+  public type Period = {
+    start : Nat32;
+    end : Nat32;
+    budget : Nat32;
+    expenses : Trie.Trie<ExpenseId, Expense>;
+  };
+
   //expense
   public type Expense = {
-    id : ExpenseId;
     date : Nat32;
     details : Text;
     amount : Nat32;
   };
-  //period
-  //add id to period
-  public type Period = {
-    id : PeriodId;
-    start : Nat32;
-    end : Nat32;
-    budget : Nat32;
-    expenses : List.List<Expense>;
-  };
+
   //user
   public type User = {
-    periods : List.List<Period>;
+    periods : Trie.Trie<PeriodId, Period>;
   };
+
   //all users
   private stable var users : Trie.Trie<Principal, User> = Trie.empty();
   //check if exists
@@ -56,7 +57,11 @@ actor {
   };
 
   //add user
-  public func addUser(principal : Principal, user : User) : async Principal {
+  public func addUser(principal : Principal) : async Principal {
+    //create user with empty periods
+    let user : User = {
+      periods = Trie.empty();
+    };
     //check if exists
     if (await exists(principal)) {
       return principal;
@@ -72,8 +77,13 @@ actor {
   };
 
   //fetch periods or create account
-  public func fetchPeriods(principal : Principal) : async [Period] {
-    var periods = List.nil<Period>(); //empty list
+  public func fetchPeriods(principal : Principal) : async [{
+    id : PeriodId;
+    period : Period;
+  }] {
+
+    var periods : Trie.Trie<PeriodId, Period> = Trie.empty(); //empty Trie
+
     //check if they exist
     if (await exists(principal)) {
       //if they do, fetch periods, will be a list
@@ -84,8 +94,7 @@ actor {
       };
     } else {
       //if not create account, then fetch periods
-      let user = { periods = List.nil<Period>() };
-      var _userPrincipal = await addUser(principal, user);
+      var _userPrincipal = await addUser(principal);
       let userOpt = Trie.find(users, key(principal), Principal.equal);
       switch (userOpt) {
         case (?user) { periods := user.periods };
@@ -93,7 +102,10 @@ actor {
       };
     };
     //return array
-    return List.toArray<Period>(periods);
+    return Trie.toArray<PeriodId, Period, { id : PeriodId; period : Period }>(
+      periods,
+      func(k, v) = ({ id = k; period = v }),
+    );
   };
 
   //add period
@@ -112,7 +124,7 @@ actor {
     let periodId = nextPeriodId;
     nextPeriodId += 1;
 
-    let user = Trie.find(users, key(principal), Principal.equal);
+    let user = Trie.find(users, key(principal), Principal.equal); //find user
     let exists = Option.isSome(user);
     if (exists) {
       switch (user) {
@@ -127,10 +139,10 @@ actor {
             start = start;
             end = end;
             budget = budget;
-            expenses = List.nil<Expense>(); //empty list
+            expenses = Trie.empty(); //empty expenses initially
           };
-          //create new period list with the new period
-          let updatedPeriods = List.push(period, periods);
+          //create new period trie with the new period
+          let updatedPeriods = Trie.put(periods, { hash = periodId; key = periodId }, Nat32.equal, period).0;
           //update the user with the new period
           let updatedUser : User = { periods = updatedPeriods };
           //update the user in the trie
@@ -164,7 +176,7 @@ actor {
         case (?user) {
           let periods = user.periods;
           //fetch period
-          let period = List.find<Period>(periods, func p { p.id == periodId });
+          let period = Trie.find(periods, { hash = periodId; key = periodId }, Nat32.equal);
           switch (period) {
             case (null) {
               return false;
@@ -179,26 +191,17 @@ actor {
               };
 
               //create new expense list with the new expense
-              let updatedExpenses = List.push(expense, expenses);
+              //let updatedExpenses = List.push(expense, expenses);
+              let updatedExpenses = Trie.put(expenses, { hash = expenseId; key = expenseId }, Nat32.equal, expense).0;
               //updated period
               let updatedPeriod : Period = {
-                id = period.id;
                 start = period.start;
                 end = period.end;
                 budget = period.budget;
                 expenses = updatedExpenses;
               };
-              //create new period list with the updated period
-              let updatedPeriods = List.map<Period, Period>(
-                periods,
-                func p {
-                  if (p.id == periodId) {
-                    updatedPeriod;
-                  } else {
-                    p;
-                  };
-                },
-              );
+
+              let updatedPeriods = Trie.put(periods, { hash = periodId; key = periodId }, Nat32.equal, updatedPeriod).0;
 
               //update the user with the new period
               let updatedUser : User = { periods = updatedPeriods };
@@ -218,5 +221,84 @@ actor {
   };
 
   //remove period
+  public func removePeriod(principal : Principal, periodId : Nat32) : async Bool {
+    let user = Trie.find(users, key(principal), Principal.equal);//find user
+    let exists = Option.isSome(user);
+    if (exists) {
+      switch (user) {
+        case (null) {
+          return false;
+        };
+        case (?user) {
+          let periods = user.periods;
+          //fetch period
+          let period = Trie.find(periods, { hash = periodId; key = periodId }, Nat32.equal);
+          switch (period) {
+            case (null) {
+              return false;
+            };
+            case (?period) {
+              //remove period
+              let updatedPeriods = Trie.remove(periods, { hash = periodId; key = periodId }, Nat32.equal).0;
+              //update the user with the new period
+              let updatedUser : User = { periods = updatedPeriods };
+              //update the user in the trie
+              users := Trie.put(users, key principal, Principal.equal, updatedUser).0;
+              return true;
+            };
+          }
+
+        };
+      };
+    };
+
+    return false;
+  };
+
+  //remove expense
+  public func removeExpense(principal : Principal, periodId : Nat32, expenseId : Nat32) : async Bool {
+    let user = Trie.find(users, key(principal), Principal.equal);//find user
+    let exists = Option.isSome(user);
+    if (exists) {
+      switch (user) {
+      case (null) {
+        return false;
+      };
+      case (?user) {
+        let periods = user.periods;
+        //fetch period
+        let period = Trie.find(periods, { hash = periodId; key = periodId }, Nat32.equal);
+        switch (period) {
+        case (null) {
+          return false;
+        };
+        case (?period) {
+          //fetch expenses
+          let expenses = period.expenses;
+          //remove expense
+          let updatedExpenses = Trie.remove(expenses, { hash = expenseId; key = expenseId }, Nat32.equal).0;
+          //update the period with the new expenses
+          let updatedPeriod : Period = {
+          start = period.start;
+          end = period.end;
+          budget = period.budget;
+          expenses = updatedExpenses;
+          };
+
+          let updatedPeriods = Trie.put(periods, { hash = periodId; key = periodId }, Nat32.equal, updatedPeriod).0;
+          //update the user with the new period
+          let updatedUser : User = { periods = updatedPeriods };
+          //update the user in the trie
+          users := Trie.put(users, key principal, Principal.equal, updatedUser).0;
+          return true;
+        };
+        }
+
+      };
+      };
+    };
+
+    return false;
+    };
 
 };

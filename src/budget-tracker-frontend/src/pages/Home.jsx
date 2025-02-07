@@ -3,7 +3,7 @@ import { useAuth } from "../hooks/AuthContext";
 import { budget_tracker_backend } from 'declarations/budget-tracker-backend';
 import Period from "../components/Period";
 import AddPeriod from "../components/AddPeriod";
-import Login from "../components/Login";
+import Navbar from "../components/Navbar";
 
 const Home = () => {
     const { identity, getIdentity } = useAuth();
@@ -27,24 +27,18 @@ const Home = () => {
     }
     return (
         <>
-            <nav className="navbar navbar-expand-lg bg-body-tertiary fixed-top">
-                <div className="container-fluid">
-                    <a className="navbar-brand me-auto" href="#">
-                        Budget Tracker
-                    </a>
-                    <Login />
-                </div>
-            </nav>
+            <Navbar />
             <div className="container" style={{ marginTop: "10%" }}>
-                <h4>Internet Identity: {identity ? identity.getPrincipal().toText() : ""}</h4>
+                <h1>Welcome</h1>
+                <br />
                 <button className="btn btn-primary" disabled={!identity || loading} onClick={fetchPeriods}>{identity ? "Start Tracking" : "Log in to start tracking"}</button>
 
                 {loading && <div className="mt-3 loader"></div>}
                 <div>
-                    <h2>Periods</h2>
-                    {identity ?
+
+                    {identity &&
                         <>
-                            <div>
+                            <div className="mt-3">
                                 <button className="btn btn-secondary" onClick={() => setAddPeriod(true)}>Add Period</button>
                                 {addPeriod && <>
                                     <div className="alert-card-overlay" /* onClick={() => setAddPeriod(false)} */ >
@@ -64,15 +58,18 @@ const Home = () => {
                                         </div>
                                     </div>
 
+
                                 </>}
                             </div>
+                            <h2>Periods</h2>
                             <div className="mt-3 row">
                                 {periods.map((period) => (
                                     <Period period={period} key={period.id} fetchPeriods={fetchPeriods} identity={identity} />
                                 ))}
                             </div>
+
                         </>
-                        : <div>Log in to start tracking</div>}
+                    }
                 </div>
             </div>
         </>
