@@ -2,31 +2,44 @@ import { useState } from "react";
 import Expenditure from "./Expenditure";
 import AddExpense from "./AddExpense";
 
-const Period = ({ identity, period, fetchPeriods }) => {
+const Period = ({ identity, periodObject, fetchPeriods }) => {
     const [expand, setExpand] = useState(false);
     const [addExpense, setAddExpense] = useState(false);
 
-    function flattenExpenses(expenses) {
-        // This function will recursively flatten the linked list structure
-        let flatExpenses = [];
+    let period = periodObject.period;
+    let expenses = flattenExpenses(period.expenses);
 
-        function flatten(item) {
-            if (Array.isArray(item)) {
-                item.forEach(subItem => flatten(subItem));  // Recursively flatten each sub-item
-            } else {
-                flatExpenses.push(item);  // Add the expense object to the array
+        function flattenExpenses(hashMap) {
+            let result = [];
+        
+            function traverse(node) {
+                if (Array.isArray(node)) {
+                    node.forEach(traverse);
+                } else if (typeof node === 'object' && node !== null) {
+                    if ('key' in node && 'hash' in node) {
+                        // Extract next object as expense details
+                        const nextIndex = result.length;
+                        result[nextIndex] = { key: node.key, expense: {} };
+                    } else if ('date' in node && 'details' in node && 'amount' in node) {
+                        const lastEntry = result[result.length - 1];
+                        if (lastEntry) {
+                            lastEntry.expense = node;
+                        }
+                    } else {
+                        Object.entries(node).forEach(([_, v]) => traverse(v));
+                    }
+                }
             }
+        
+            traverse(hashMap);
+            return result;
         }
-
-        flatten(expenses);
-        return flatExpenses;
-    }
 
     //totals
     const totalExpenditure = (expenses) => {
-        const flat = flattenExpenses(expenses);
         let total = 0;
-        flat.forEach((expense) => {
+        expenses.forEach((expenseObject) => {
+            const expense = expenseObject.expense;
             total += expense.amount
         });
         return total
@@ -46,7 +59,7 @@ const Period = ({ identity, period, fetchPeriods }) => {
                                 <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
                             </svg></a></div>
                             <div className="card-body">
-                                <Expenditure expenses={period.expenses} fetchPeriods={fetchPeriods} />
+                                <Expenditure expenses={expenses} fetchPeriods={fetchPeriods} />
                             </div>
                         </div>
                     </div>
@@ -61,7 +74,7 @@ const Period = ({ identity, period, fetchPeriods }) => {
                                 <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
                             </svg></a></div>
                             <div className="card-body">
-                                <AddExpense period={period} fetchPeriods={fetchPeriods} identity={identity}/>
+                                <AddExpense periodObject={periodObject} fetchPeriods={fetchPeriods} identity={identity}/>
                             </div>
                         </div>
                     </div>
@@ -71,15 +84,15 @@ const Period = ({ identity, period, fetchPeriods }) => {
             <div className="col-6 col-lg-3 mb-3 d-flex align-items-stetch">
                 <div className="card">
                     <div className="card-header">
-                        <h2># {period.id}</h2>
+                        <h2># {periodObject.id}</h2>
                     </div>
                     <div className="card-body">
                         <div className="card-title">Details</div>
                         <div className="card-text">Start: {formatDate(period.start)}</div>
                         <div className="card-text">End: {formatDate(period.end)}</div>
                         <div className="card-text">Budget: {period.budget}</div>
-                        <div className="card-text">Total Expenditure: {totalExpenditure(period.expenses)}</div>
-                        <div className="card-text">Remaining Budget: {period.budget - totalExpenditure(period.expenses)}</div>
+                        <div className="card-text">Total Expenditure: {totalExpenditure(expenses)}</div>
+                        <div className="card-text">Remaining Budget: {period.budget - totalExpenditure(expenses)}</div>
                         <div className="mt-3">
                             <a className="btn btn-primary" onClick={() => setExpand(true)}>Expand</a>
                             <a className="ms-5 btn btn-primary" onClick={() => setAddExpense(true)}>New Expense</a>

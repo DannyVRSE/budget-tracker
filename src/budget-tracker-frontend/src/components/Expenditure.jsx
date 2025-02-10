@@ -1,5 +1,6 @@
-const Expenditure = ({ expenses}) => {
-    function flattenExpenses(expenses) {
+const Expenditure = ({ expenses }) => {
+
+    /*function flattenExpenses(expenses) {
         // This function will recursively flatten the linked list structure
         let flatExpenses = [];
 
@@ -13,7 +14,7 @@ const Expenditure = ({ expenses}) => {
 
         flatten(expenses);
         return flatExpenses;
-    }
+    }*/
 
     const formatDate = (timestamp) => {
         return new Date(timestamp * 1000).toLocaleDateString();
@@ -30,11 +31,11 @@ const Expenditure = ({ expenses}) => {
                     </tr>
                 </thead>
                 <tbody>
-                    {flattenExpenses(expenses).map(expense => (
-                        <tr key={expense.id}>
-                            <td>{formatDate(expense.date)}</td>
-                            <td>{expense.details}</td>
-                            <td>{expense.amount}</td>
+                    {expenses.map(expenseObject => (
+                        <tr key={expenseObject.key}>
+                            <td>{formatDate(expenseObject.expense.date)}</td>
+                            <td>{expenseObject.expense.details}</td>
+                            <td>{expenseObject.expense.amount}</td>
                         </tr>
                     ))}
                 </tbody>

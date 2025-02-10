@@ -2,7 +2,8 @@ import { useState } from "react"
 import timestamp from 'unix-timestamp';
 import { budget_tracker_backend } from 'declarations/budget-tracker-backend';
 
-const AddExpense = ({ identity , fetchPeriods, period}) => {
+const AddExpense = ({ identity , fetchPeriods, periodObject}) => {
+    const period = periodObject.period;
     const [expense, setExpense] = useState({
         date: "",
         details: "",

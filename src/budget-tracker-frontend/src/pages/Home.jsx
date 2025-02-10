@@ -64,7 +64,7 @@ const Home = () => {
                             <h2>Periods</h2>
                             <div className="mt-3 row">
                                 {periods.map((period) => (
-                                    <Period period={period} key={period.id} fetchPeriods={fetchPeriods} identity={identity} />
+                                    <Period periodObject={period} key={period.id} fetchPeriods={fetchPeriods} identity={identity} />
                                 ))}
                             </div>
 
